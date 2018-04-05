@@ -17,7 +17,6 @@ HIV = function(n, probHIV, probInfect, probReplace, t) {
   grids[,,1] = body
   responseTimeGrid <<- periodicLat(responseTimeGrid)
   for (i in 2:(t+1)) {
-    print(responseTimeGrid)
     bodyExtended = periodicLat(body)
     
     body = applyExtended(bodyExtended, probInfect, probReplace)
