@@ -8,17 +8,18 @@ responseTimeGrid <- array(numeric(), c(0,0))
 
 HIV = function(n, probHIV, probInfect, probReplace, t) {
   # FIRE simulation
-  body  = initBody( n, probHIV)
+  body= initBody( n, probHIV)
   responseTimeGrid <<- body * responseTime
   
   grids = array(dim=c(n,n,t+1))
 
   
   grids[,,1] = body
-  
+  responseTimeGrid <<- periodicLat(responseTimeGrid)
   for (i in 2:(t+1)) {
+    print(responseTimeGrid)
     bodyExtended = periodicLat(body)
-    responseTimeGrid <<- periodicLat(responseTimeGrid)
+    
     body = applyExtended(bodyExtended, probInfect, probReplace)
     grids[,,i] = body
   }
@@ -27,6 +28,7 @@ HIV = function(n, probHIV, probInfect, probReplace, t) {
 }
 
 applyExtended = function(latExt, probInfect, probReplace) {
+  
   # APPLYEXTENDED - Function to apply 
   # spread() to every interior
   # site of square array latExt and to return the resulting array
@@ -43,13 +45,13 @@ applyExtended = function(latExt, probInfect, probReplace) {
       W = latExt[i, j - 1]
       SW = latExt[i+1, j-1]
       SE = latExt[i+1, j+1]
-      newmat[i - 1, j - 1] = spread(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j)
+      newmat[i-1, j-1] = spread(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j)
     }
   }
   return(newmat)
 }
 
-initBody = function( n, probHIV){
+initBody = function( n, probHIV ){
   #INITBODY returns an n-by-n grid of values?\
   # HEALTHY (healthy cell), 
   # INFECTEDA1 (infected cell), or INFECTEDA2 (infected cell), or DEAD (dead cell)
@@ -62,7 +64,6 @@ initBody = function( n, probHIV){
   # 1 where healthy
   healthy = 1 - infected
 
-  # EMPTY, TREE, or BURNING
   body =  healthy * HEALTHY + infected * INFECTEDA1
   
   return (body)
@@ -126,12 +127,15 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
     }
     else if(N+NE+NW+E+W+S+SW+SE > numberOfA2 * 2){
       newSite = INFECTEDA1
+      responseTimeGrid[i, j] <<- responseTime
     }
     else if(runif(1) < probInfect){
       newSite = INFECTEDA1
+      responseTimeGrid[i, j] <<- responseTime
     }
     else{
       newSite = HEALTHY
+      responseTimeGrid[i, j] <<- 0
     }
   }
   else if (site == INFECTEDA1){
@@ -145,12 +149,15 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
   }
   else if (site == INFECTEDA2) {
     newSite = DEAD
+    responseTimeGrid[i, j] <<- 0
   }
   else if (site == DEAD) {
     if(runif(1) < probReplace){
       newSite = HEALTHY
+      responseTimeGrid[i, j] <<- 0
     }else{
       newSite = DEAD
+      responseTimeGrid[i, j] <<- 0
     }
   }
   return(newSite)
@@ -160,5 +167,5 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
 ### TESTING ###
 
 ## test grids = HIV(n, probHIV, probInfect, probReplace, t)
-grids = HIV(100, 0.05, 0.000001, 0.99, 20)
-showGraphs(grids, 15)
+grids = HIV(20, .05, 0.00001, 0.99, 50)
+showGraphs(grids, 20)
