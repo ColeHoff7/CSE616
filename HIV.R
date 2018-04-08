@@ -3,7 +3,7 @@ INFECTEDA1 = 1
 INFECTEDA2 = 2
 DEAD = 3
 numberOfA2 = 5
-responseTime  = 4*7 #4 weeks
+responseTime  = 4*1 #4 weeks
 responseTimeGrid <- array(numeric(), c(0,0))
 
 HIV = function(n, probHIV, probInfect, probReplace, t) {
@@ -150,16 +150,58 @@ showTimeGraph = function(graphList,n){
   return(list(weeks,healthyNum,a1Num,a2Num,deadNum))
 }
 
-FFT = function(TimeObject){
+FFT = function(TimeObject, fs, fRange){
   weeks = TimeObject[[1]]
   healthyNum = TimeObject[[1]]
   a1Num = TimeObject[[1]]
   a2Num = TimeObject[[1]]
   deadNum = TimeObject[[1]]
   
+  healthyFFT = fft(healthyNum)
+  a1FFT = fft(a1Num)
+  a2FFT = fft(a2Num)
+  deadFFT = fft(deadNum)
+  
+  plot.frequency.spectrum(healthyFFT, xlimits=c(0,fRange), fs, "Healthy", "green")
+  plot.frequency.spectrum(a1FFT, xlimits=c(0,fRange), fs, "A1", "orange")
+  plot.frequency.spectrum(a2FFT, xlimits=c(0,fRange), fs, "A2", "red")
+  plot.frequency.spectrum(deadFFT, xlimits=c(0,fRange), fs, "Dead", "black")
   
   
 }
+
+#Orignal Author João Neto++++++++++++++++++++++++++++++++++++++++++++++++++++
+#Modified by Wilson Guo++++++++++++++++++++++++++++++++++++++++++++++++++++++
+plot.frequency.spectrum <- function(X.k, xlimits=c(0,length(X.k)), fs, label, color) {
+  
+  zeroPad = seq(0,100,1)
+  zeroPad[1:101] = 0
+  X.k = fft(c(zeroPad,healthyNum,zeroPad))
+  freq = seq(0,(length(X.k)/2),1)*fs/length(X.k)#Construct Freqeuency Axis
+  data = abs(X.k/length(test))#Construct Amplitude Axis
+  data[2:length(X.k)] = 2*data[2:length(X.k)]#Scale Amplitude
+  data = data[1:(length(data)/2+1)]#Cut negative freq
+  plot.data  = cbind(freq, data)#Combine Freqeuency and Amplitude
+  plot(plot.data, t="h", lwd=2, main="", 
+       xlab="Frequency (Hz)", ylab="Strength", 
+       xlim=xlimits, ylim=c(0,max(Mod(plot.data[,2]))),col=c(color))
+  legend("topright", legend=c(label), lty=c("solid"),col=c(color))
+  
+}
+
+# Plot the i-th harmonic
+# Xk: the frequencies computed by the FFt
+#  i: which harmonic
+# ts: the sampling time points
+# acq.freq: the acquisition rate
+plot.harmonic <- function(Xk, i, ts, acq.freq, color="red") {
+  Xk.h <- rep(0,length(Xk))
+  Xk.h[i+1] <- Xk[i+1] # i-th harmonic
+  harmonic.trajectory <- get.trajectory(Xk.h, ts, acq.freq=acq.freq)
+  points(ts, harmonic.trajectory, type="l", col=color)
+}
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j) {
   # SPREAD - Function to return the value of a site
@@ -210,22 +252,12 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
   return(newSite)
 }
 
-plot.frequency.spectrum <- function(X.k, xlimits=c(0,length(X.k)),label,color) {
-  plot.data  <- cbind(0:(length(X.k)-1), Mod(X.k))
-  
-  # TODO: why this scaling is necessary?
-  plot.data[2:length(X.k),2] <- 2*plot.data[2:length(X.k),2] 
-  
-  plot(plot.data, t="h", lwd=2, main="", 
-       xlab="Frequency (Hz)", ylab="Strength", 
-       xlim=xlimits, ylim=c(0,max(Mod(plot.data[,2]))))
-  legend("topright", legend=c(label), lty=c("solid"),col=c(color))
-  
-}
+
 
 ### TESTING ###
 
 ## test grids = HIV(n, probHIV, probInfect, probReplace, t)
-grids = HIV(20, .05, 0.00001, 0.99, 50)
+grids = HIV(20, .05, 0.00001, 0.99, 100)
 #showGraphs(grids, 20)
 timeCell = showTimeGraph(grids, 20)
+FFT(timeCell,1,.5)
