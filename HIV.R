@@ -97,11 +97,12 @@ pointsForGrid = function(grid,val) {
 
 showGraphs = function(graphList, n) {
   # SHOWGRAPHS - Function to perform animation of grids in graphList
-  savePath = "/Users/Wilson/Documents/R/"
+  savePath = file.choose()
+  savePath = substr(savePath,1,nchar(savePath)-5)
   m = dim(graphList)[3]
   for (k in 1:m) {
     #uncomment to save image
-    #jpeg(paste(savePath,paste(toString(k),".jpg",sep = ""),sep = ""))
+    jpeg(paste(savePath,paste(toString(k),".jpg",sep = ""),sep = ""))
     g = graphList[,,k]
     healthy = pointsForGrid(g, HEALTHY)
     infecteda1 = pointsForGrid(g,INFECTEDA1)
@@ -114,7 +115,7 @@ showGraphs = function(graphList, n) {
     points(dead[[1]],dead[[2]],col="red",pch=23,bg="black")
     Sys.sleep(0.2)
   	#paired with jpeg
-    #dev.off()
+    dev.off()
   }
 }
 
