@@ -97,8 +97,11 @@ pointsForGrid = function(grid,val) {
 
 showGraphs = function(graphList, n) {
   # SHOWGRAPHS - Function to perform animation of grids in graphList
+  savePath = "/Users/Wilson/Documents/R/"
   m = dim(graphList)[3]
   for (k in 1:m) {
+    #uncomment to save image
+    #jpeg(paste(savePath,paste(toString(k),".jpg",sep = ""),sep = ""))
     g = graphList[,,k]
     healthy = pointsForGrid(g, HEALTHY)
     infecteda1 = pointsForGrid(g,INFECTEDA1)
@@ -110,7 +113,52 @@ showGraphs = function(graphList, n) {
     points(infecteda2[[1]],infecteda2[[2]],col="red",pch=23,bg="purple")
     points(dead[[1]],dead[[2]],col="red",pch=23,bg="black")
     Sys.sleep(0.2)
+  	#paired with jpeg
+    #dev.off()
   }
+}
+
+showTimeGraph = function(graphList,n){
+  #Function used to extract number of health, A1, A2, and
+  #dead cell and plot vs weeks
+  m = dim(graphList)[3]
+ # m = dim(grids)[3]
+  healthyNum = vector(length = n)
+  a1Num = vector(length = n)
+  a2Num = vector(length = n)
+  deadNum = vector(length = n)
+  for (k in 1:m) {
+   g = graphList[,,k]
+   #For debug
+   #g = grids[,,k]
+   healthy = pointsForGrid(g, HEALTHY)
+   infecteda1 = pointsForGrid(g,INFECTEDA1)
+   infecteda2 = pointsForGrid(g,INFECTEDA2)
+   dead = pointsForGrid(g,DEAD)
+   healthyNum[k] = length(healthy[[1]])
+   a1Num[k] = length(infecteda1[[1]])
+   a2Num[k] = length(infecteda2[[1]])
+   deadNum[k] = length(dead[[1]])
+  }
+  weeks = seq(1,m,1)
+  plot(weeks,healthyNum,type="n",xlab="Weeks",ylab="Num",main = "Cell Infection in Time",col=c("red"))
+  legend("topright", legend=c("Healthy","A1Infected","A2Infected","Dead"), lty=c("solid","solid","solid","solid","solid"),col=c("green","orange","red","black"))
+  lines(weeks,healthyNum,lwd=2,lty="solid",col=c("green"))
+  lines(weeks,a1Num,lwd=2,lty="solid",col=c("orange"))
+  lines(weeks,a2Num,lwd=2,lty="solid",col=c("red"))
+  lines(weeks,deadNum,lwd=2,lty="solid",col=c("black"))
+  return(list(weeks,healthyNum,a1Num,a2Num,deadNum))
+}
+
+FFT = function(TimeObject){
+  weeks = TimeObject[[1]]
+  healthyNum = TimeObject[[1]]
+  a1Num = TimeObject[[1]]
+  a2Num = TimeObject[[1]]
+  deadNum = TimeObject[[1]]
+  
+  
+  
 }
 
 spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j) {
@@ -162,9 +210,22 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
   return(newSite)
 }
 
+plot.frequency.spectrum <- function(X.k, xlimits=c(0,length(X.k)),label,color) {
+  plot.data  <- cbind(0:(length(X.k)-1), Mod(X.k))
+  
+  # TODO: why this scaling is necessary?
+  plot.data[2:length(X.k),2] <- 2*plot.data[2:length(X.k),2] 
+  
+  plot(plot.data, t="h", lwd=2, main="", 
+       xlab="Frequency (Hz)", ylab="Strength", 
+       xlim=xlimits, ylim=c(0,max(Mod(plot.data[,2]))))
+  legend("topright", legend=c(label), lty=c("solid"),col=c(color))
+  
+}
 
 ### TESTING ###
 
 ## test grids = HIV(n, probHIV, probInfect, probReplace, t)
 grids = HIV(20, .05, 0.00001, 0.99, 50)
-showGraphs(grids, 20)
+#showGraphs(grids, 20)
+timeCell = showTimeGraph(grids, 20)

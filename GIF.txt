@@ -1,0 +1,1 @@
+/Program Files/ImageMagick-7.0.7-Q16/magick.exe convert -delay 0.5 plot*.jpg plot.gif
