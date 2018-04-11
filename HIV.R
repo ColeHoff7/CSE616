@@ -5,12 +5,16 @@ DEAD = 3
 numberOfA2 = 5
 responseTime  = 4*1 #4 weeks
 responseTimeGrid <- array(numeric(), c(0,0))
+respoProbTime
 
 HIV = function(n, probHIV, probInfect, probReplace, t) {
   # FIRE simulation
   body= initBody( n, probHIV)
   responseTimeGrid <<- body * responseTime
-  
+  #Uncomment for step respond prob. for project 2 part b
+  #respoProbTime = makeRespoProbTime(.2, .8, t)
+  #Uncomment for linear respond prob. for project 2 part c
+  respoProbTime = rev(seq(0,t,1))/t
   grids = array(dim=c(n,n,t+1))
 
   
@@ -19,14 +23,22 @@ HIV = function(n, probHIV, probInfect, probReplace, t) {
   for (i in 2:(t+1)) {
     bodyExtended = periodicLat(body)
     
-    body = applyExtended(bodyExtended, probInfect, probReplace)
+    body = applyExtended(bodyExtended, probInfect, probReplace, respoProbTime[i])
     grids[,,i] = body
   }
   
   return(grids)
 }
 
-applyExtended = function(latExt, probInfect, probReplace) {
+makeRespoProbTime = function(min, max, n){
+  
+  respoProbTime = seq(0,n,1)
+  respoProbTime[1:n/2] = max
+  respoProbTime[(n/2):n] = min
+  return(respoProbTime)
+}
+
+applyExtended = function(latExt, probInfect, probReplace, respoProbTime) {
   
   # APPLYEXTENDED - Function to apply 
   # spread() to every interior
@@ -44,7 +56,7 @@ applyExtended = function(latExt, probInfect, probReplace) {
       W = latExt[i, j - 1]
       SW = latExt[i+1, j-1]
       SE = latExt[i+1, j+1]
-      newmat[i-1, j-1] = spread(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j)
+      newmat[i-1, j-1] = spread(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j, 1, respoProbTime)
     }
   }
   return(newmat)
@@ -97,12 +109,12 @@ pointsForGrid = function(grid,val) {
 
 showGraphs = function(graphList, n) {
   # SHOWGRAPHS - Function to perform animation of grids in graphList
-  savePath = file.choose()
-  savePath = substr(savePath,1,nchar(savePath)-5)
+  #savePath = file.choose()
+  #savePath = substr(savePath,1,nchar(savePath)-4)
   m = dim(graphList)[3]
   for (k in 1:m) {
     #uncomment to save image
-    jpeg(paste(savePath,paste(toString(k),".jpg",sep = ""),sep = ""))
+    #jpeg(paste(savePath,paste(toString(k),".jpg",sep = ""),sep = ""))
     g = graphList[,,k]
     healthy = pointsForGrid(g, HEALTHY)
     infecteda1 = pointsForGrid(g,INFECTEDA1)
@@ -115,7 +127,7 @@ showGraphs = function(graphList, n) {
     points(dead[[1]],dead[[2]],col="red",pch=23,bg="black")
     Sys.sleep(0.2)
   	#paired with jpeg
-    dev.off()
+    #dev.off()
   }
 }
 
@@ -204,10 +216,11 @@ plot.harmonic <- function(Xk, i, ts, acq.freq, color="red") {
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j) {
+spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j, mode, respoProb) {
   # SPREAD - Function to return the value of a site
   # at the next time step
-  
+  # mode : enable probalistic response - 0 for default, 1 to enable
+  # respoProb : between 0 and 1
   if (site == HEALTHY){
     #if site is healthy and has one A1 neighbor, cell becomes infected
     if(N == INFECTEDA1 || NE == INFECTEDA1 || NW == INFECTEDA1 || E == INFECTEDA1 || S == INFECTEDA1 || W == INFECTEDA1 || SW == INFECTEDA1 || SE == INFECTEDA1)
@@ -229,12 +242,23 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
     }
   }
   else if (site == INFECTEDA1){
-    #check to see if responseTime has passed for this cell
-    if(responseTimeGrid[i, j] == 0){
-      newSite = INFECTEDA2
-    }else{
-      responseTimeGrid[i, j] <<- responseTimeGrid[i, j] - 1
-      newSite = INFECTEDA1
+    if(mode == 0){
+      #check to see if responseTime has passed for this cell
+      if(responseTimeGrid[i, j] == 0){
+        newSite = INFECTEDA2
+      }else{
+        responseTimeGrid[i, j] <<- responseTimeGrid[i, j] - 1
+        newSite = INFECTEDA1
+      }
+    }
+    else{
+      #probalistic promotion from A1 to A2
+      if(runif(1) < respoProb){
+        newSite = INFECTEDA2
+      }
+      else{
+        newSite = INFECTEDA1
+      }
     }
   }
   else if (site == INFECTEDA2) {
@@ -258,7 +282,7 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
 ### TESTING ###
 
 ## test grids = HIV(n, probHIV, probInfect, probReplace, t)
-grids = HIV(20, .05, 0.00001, 0.99, 100)
-#showGraphs(grids, 20)
-timeCell = showTimeGraph(grids, 20)
-FFT(timeCell,1,.5)
+grids = HIV(20, .05, 0.00001, 0.99, 20)
+showGraphs(grids, 20)
+#timeCell = showTimeGraph(grids, 20)
+#FFT(timeCell,1,.5)
