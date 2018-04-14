@@ -166,5 +166,5 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
 ### TESTING ###
 
 ## test grids = HIV(n, probHIV, probInfect, probReplace, t)
-grids = HIV(20, .05, 0.00001, 0.99, 50)
-showGraphs(grids, 20)
+grids = HIV(100, .05, 0.00001, 0.7, 50)
+showGraphs(grids, 100)
