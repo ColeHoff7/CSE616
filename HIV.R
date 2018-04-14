@@ -6,9 +6,10 @@ numberOfA2 = 5
 responseTime  = 4*1 #4 weeks
 responseTimeGrid <- array(numeric(), c(0,0))
 respoProbTime = 0
+therapyTime = 300
 
-HIV = function(n, probHIV, probInfect, probReplace, t) {
-  # FIRE simulation
+HIV = function(n, probHIV, probInfect, probReplace, rank, t) {
+  #rank is number from 0 to 8 for effectiveness of drug treatment
   body= initBody( n, probHIV)
   responseTimeGrid <<- body * responseTime
   #Uncomment for step respond prob. for project 2 part b
@@ -22,8 +23,12 @@ HIV = function(n, probHIV, probInfect, probReplace, t) {
   responseTimeGrid <<- periodicLat(responseTimeGrid)
   for (i in 2:(t+1)) {
     bodyExtended = periodicLat(body)
-    
-    body = applyExtended(bodyExtended, probInfect, probReplace, respoProbTime[i])
+    if(t > therapyTime){
+      mode = 1
+    }else{
+      mode = 0
+    }
+    body = applyExtended(bodyExtended, probInfect, probReplace, respoProbTime[i], mode, rank)
     grids[,,i] = body
   }
   
@@ -38,7 +43,7 @@ makeRespoProbTime = function(min, max, n){
   return(respoProbTime)
 }
 
-applyExtended = function(latExt, probInfect, probReplace, respoProbTime) {
+applyExtended = function(latExt, probInfect, probReplace, respoProbTime, mode, rank) {
   
   # APPLYEXTENDED - Function to apply 
   # spread() to every interior
@@ -56,7 +61,7 @@ applyExtended = function(latExt, probInfect, probReplace, respoProbTime) {
       W = latExt[i, j - 1]
       SW = latExt[i+1, j-1]
       SE = latExt[i+1, j+1]
-      newmat[i-1, j-1] = spread(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j, 1, respoProbTime)
+      newmat[i-1, j-1] = spread(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j, mode, respoProbTime, rank)
     }
   }
   return(newmat)
@@ -216,7 +221,7 @@ plot.harmonic <- function(Xk, i, ts, acq.freq, color="red") {
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j, mode, respoProb) {
+spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j, mode, respoProb, rank) {
   # SPREAD - Function to return the value of a site
   # at the next time step
   # mode : enable probalistic response - 0 for default, 1 to enable
@@ -253,7 +258,7 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
     }
     else{
       #probalistic promotion from A1 to A2
-      if(runif(1) < respoProb){
+      if(runif(1) < (1-respoProb)*(rank/8)){
         newSite = INFECTEDA2
       }
       else{
@@ -281,8 +286,8 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
 
 ### TESTING ###
 
-## test grids = HIV(n, probHIV, probInfect, probReplace, t)
-grids = HIV(20, .05, 0.00001, 0.99, 20)
+## test grids = HIV(n, probHIV, probInfect, probReplace, rank, t)
+grids = HIV(20, .05, 0.00001, 0.99, 6, 20)
 showGraphs(grids, 20)
 #timeCell = showTimeGraph(grids, 20)
 #FFT(timeCell,1,.5)
