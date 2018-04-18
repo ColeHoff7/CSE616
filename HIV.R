@@ -6,7 +6,7 @@ numberOfA2 = 5
 responseTime  = 4 #4 weeks
 responseTimeGrid <- array(numeric(), c(0,0))
 respoProbTime = 0
-therapyTime = 0
+therapyTime = 15
 
 HIV = function(n, probHIV, probInfect, probReplace, rank, t) {
   #rank is number from 0 to 8 for effectiveness of drug treatment
@@ -176,10 +176,10 @@ showTimeGraph = function(graphList,n){
 
 FFT = function(TimeObject, fs, fRange){
   weeks = TimeObject[[1]]
-  healthyNum = TimeObject[[1]]
-  a1Num = TimeObject[[1]]
-  a2Num = TimeObject[[1]]
-  deadNum = TimeObject[[1]]
+  healthyNum = TimeObject[[2]]
+  a1Num = TimeObject[[3]]
+  a2Num = TimeObject[[4]]
+  deadNum = TimeObject[[5]]
   
   healthyFFT = fft(healthyNum)
   a1FFT = fft(a1Num)
@@ -202,7 +202,7 @@ plot.frequency.spectrum <- function(X.k, xlimits=c(0,length(X.k)), fs, label, co
   zeroPad[1:101] = 0
   X.k = fft(c(zeroPad,healthyNum,zeroPad))
   freq = seq(0,(length(X.k)/2),1)*fs/length(X.k)#Construct Freqeuency Axis
-  data = abs(X.k/length(test))#Construct Amplitude Axis
+  data = abs(X.k/length(x.k))#Construct Amplitude Axis
   data[2:length(X.k)] = 2*data[2:length(X.k)]#Scale Amplitude
   data = data[1:(length(data)/2+1)]#Cut negative freq
   plot.data  = cbind(freq, data)#Combine Freqeuency and Amplitude
@@ -293,9 +293,9 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
 ### TESTING ###
 
 ## test grids = HIV(n, probHIV, probInfect, probReplace, rank, t)
-time = 10
-num = 100
+time = 500
+num = 10
 grids = HIV(num, .05, 0.00001, 0.99, 8, time)
 showGraphs(grids, num)
 timeCell = showTimeGraph(grids, time+1)
-#FFT(timeCell,1,.5)
+FFT(timeCell,1,.5)
