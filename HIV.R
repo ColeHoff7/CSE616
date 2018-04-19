@@ -6,7 +6,7 @@ numberOfA2 = 5
 responseTime  = 4 #4 weeks
 responseTimeGrid <- array(numeric(), c(0,0))
 respoProbTime = 0
-therapyTime = 0
+therapyTime = 300
 
 HIV = function(n, probHIV, probInfect, probReplace, rank, t) {
   #rank is number from 0 to 8 for effectiveness of drug treatment
@@ -119,26 +119,27 @@ pointsForGrid = function(grid,val) {
 
 showGraphs = function(graphList, n) {
   # SHOWGRAPHS - Function to perform animation of grids in graphList
-  #savePath = file.choose()
-  #savePath = substr(savePath,1,nchar(savePath)-4)
+  savePath = file.choose()
+  savePath = substr(savePath,1,nchar(savePath)-4)
   m = dim(graphList)[3]
   for (k in 1:m) {
     #uncomment to save image
-    #jpeg(paste(savePath,paste(toString(k),".jpg",sep = ""),sep = ""))
+    jpeg(paste(savePath,paste(toString(k),".jpg",sep = ""),sep = ""))
     g = graphList[,,k]
     healthy = pointsForGrid(g, HEALTHY)
     infecteda1 = pointsForGrid(g,INFECTEDA1)
     infecteda2 = pointsForGrid(g,INFECTEDA2)
     dead = pointsForGrid(g,DEAD)
-    pointSize = .9
-    plot(healthy[[1]],healthy[[2]],pch=20,col="green",
+    pointSize = 1
+    pointType = '.'
+    plot(healthy[[1]],healthy[[2]],pch=pointType,col="green",
          xlim=c(0,n+1),ylim=c(0,n+1), cex = pointSize)
-    points(infecteda1[[1]],infecteda1[[2]],col="orange",pch=20,bg="orange", cex = pointSize)
-    points(infecteda2[[1]],infecteda2[[2]],col="purple",pch=20,bg="purple", cex = pointSize)
-    points(dead[[1]],dead[[2]],col="black",pch=20,bg="black", cex = pointSize)
+    points(infecteda1[[1]],infecteda1[[2]],col="orange",pch=pointType,bg="orange", cex = pointSize)
+    points(infecteda2[[1]],infecteda2[[2]],col="purple",pch=pointType,bg="purple", cex = pointSize)
+    points(dead[[1]],dead[[2]],col="black",pch=pointType,bg="black", cex = pointSize)
     Sys.sleep(0.2)
   	#paired with jpeg
-    #dev.off()
+    dev.off()
   }
 }
 healthyNum = vector(length = 100)
@@ -293,9 +294,9 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
 ### TESTING ###
 
 ## test grids = HIV(n, probHIV, probInfect, probReplace, rank, t)
-time = 10
-num = 100
-grids = HIV(num, .05, 0.00001, 0.99, 8, time)
+time = 6
+num = 400
+grids = HIV(num, .05, 0.00001, 0.99, 6, time)
 showGraphs(grids, num)
 timeCell = showTimeGraph(grids, time+1)
 #FFT(timeCell,1,.5)
