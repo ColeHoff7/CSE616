@@ -7,6 +7,7 @@ numberOfA2 = 5 # Initial Number of A2?
 responseTime  = 4*7 #4 weeks
 responseTimeGrid <- array(numeric(), c(0,0))
 
+
 HIV = function(n, probHIV, probEmpty, probInfect, probReplace, t) {
   # FIRE simulation
   body  = initBody( n, probHIV, probEmpty)
@@ -16,10 +17,11 @@ HIV = function(n, probHIV, probEmpty, probInfect, probReplace, t) {
 
   
   grids[,,1] = body
-  
+  responseTimeGrid <<- periodicLat(responseTimeGrid)
   for (i in 2:(t+1)) {
+
     bodyExtended = periodicLat(body)
-    responseTimeGrid <<- periodicLat(responseTimeGrid)
+    
     body = applyExtended(bodyExtended, probInfect, probReplace, i-1)
     grids[,,i] = body
   }
@@ -32,25 +34,77 @@ applyExtended = function(latExt, probInfect, probReplace, layer) {
   # spread() to every interior
   # site of square array latExt and to return the resulting array
   n = nrow(latExt) - 2
-  newmat = matrix(c(rep(0,n*n)), nrow = n)
+  newmat1 = latExt
   for (j in 2:(n + 1)) {
     for (i in 2:(n + 1)) {
       site = latExt[i, j]
-      N = latExt[i - 1, j]
-      NE = latExt [i-1, j+1]
-      NW = latExt[i-1, j-1]
-      E = latExt[i, j + 1]
-      S = latExt[i + 1, j]
-      W = latExt[i, j - 1]
-      SW = latExt[i+1, j-1]
-      SE = latExt[i+1, j+1]
-      newmat[i - 1, j - 1] = spread(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j)
-      if (layer>1){
-        move(site, N, NE, NW, E, S, W, SW, SE, grids, i, j, layer)
+      if(i > 2){
+        N = newmat1[i - 1, j]
+      }else{
+        N= HEALTHY
       }
+      if(i > 2 && j < n){
+        NE = newmat1[i-1, j+1]
+      }else{
+        NE = HEALTHY
+      }
+      if(i > 2 && j > 2){
+        NW = newmat1[i-1, j-1]
+      }else{
+        NW = HEALTHY
+      }
+      if(j < n){
+        E = newmat1[i, j + 1]
+      }else{
+        E = HEALTHY
+      }
+      if(i < n){
+        S = newmat1[i + 1, j]
+      }else{
+        S = HEALTHY
+      }
+      if(j > 2){
+        W = newmat1[i, j - 1]
+      }else{
+        W = HEALTHY
+      }
+      if(i < n && j > 2){
+        SW = newmat1[i+1, j-1]
+      }else{
+        SW = HEALTHY
+      }
+      if(i < n && j < n){
+        SE = newmat1[i+1, j+1]
+      }else{
+        SE = HEALTHY
+      }
+      if (layer>1){
+        
+        #if(i < n && i > 2 && j < n && j > 2){
+        newmat1= move(site, N, NE, NW, E, S, W, SW, SE, grids, i, j, layer, newmat1, n)
+        
+        #}
+      }
+      
     }
   }
-  return(newmat)
+  
+  newmat2 = matrix(c(rep(0,n*n)), nrow = n)
+  for (j in 2:(n + 1)) {
+    for (i in 2:(n + 1)) {
+      site = newmat1[i, j]
+      N = newmat1[i - 1, j]
+      NE = newmat1[i-1, j+1]
+      NW = newmat1[i-1, j-1]
+      E = newmat1[i, j + 1]
+      S = newmat1[i + 1, j]
+      W = newmat1[i, j - 1]
+      SW = newmat1[i+1, j-1]
+      SE = newmat1[i+1, j+1]
+      newmat2[i - 1, j - 1] = site#spread(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j)
+    }
+  }
+  return(newmat2)
 }
 
 initBody = function( n, probHIV, probEmpty){
@@ -113,96 +167,97 @@ showGraphs = function(graphList, n) {
     infecteda2 = pointsForGrid(g,INFECTEDA2)
     dead = pointsForGrid(g,DEAD)
     empty = pointsForGrid(g,EMPTY)
+    print(length(empty[[1]]))
     plot(healthy[[1]],healthy[[2]],pch=19,col="green",
          xlim=c(0,n+1),ylim=c(0,n+1))
-    points(infecteda1[[1]],infecteda1[[2]],col="red",pch=23,bg="orange")
-    points(infecteda2[[1]],infecteda2[[2]],col="red",pch=23,bg="purple")
-    points(dead[[1]],dead[[2]],col="red",pch=23,bg="black")
     points(empty[[1]],empty[[2]],col="black",pch=23,bg="white")
+    points(infecteda1[[1]],infecteda1[[2]],col="orange",pch=20,bg="orange")
+    points(infecteda2[[1]],infecteda2[[2]],col="purple",pch=20,bg="purple")
+    points(dead[[1]],dead[[2]],col="black",pch=20,bg="black")
     Sys.sleep(0.2)
   }
 }
 
-move = function(site, N, NE, NW, E, S, W, SW, SE, grid, i, j, layer) {
-  if(site == HEALTHY || site == INFECTEDA1 || site == INFECTEDA2 || site == DEAD) {
+move = function(site, N, NE, NW, E, S, W, SW, SE, grid, i, j, layer, mat, n) {
+  if(site == HEALTHY || site == INFECTEDA1 || site == INFECTEDA2) {
     space = c(0)
     # Finds which spaces around the site are EMPTY and stores them in a vector
-    if(N == EMPTY) {space = c(space, N)}
-    if(NE == EMPTY) {space = c(space, NE)}
-    if(NW == EMPTY) {space = c(space, NW)}
-    if(E == EMPTY) {space = c(space, E)}
-    if(S == EMPTY) {space = c(space, S)}
-    if(W == EMPTY) {space = c(space, W)}
-    if(SE == EMPTY) {space = c(space, SE)}
-    if(SW == EMPTY) {space = c(space, SW)}
-    disp = space[sample(1:length(space),1)]
-    print(i)
-    print(j)
-    if (disp == N) {
+    if(N == EMPTY && i>2) {space = c(space, 1)}
+    if(NE == EMPTY && i>2 && j<n) {space = c(space, 2)}
+    if(NW == EMPTY && i>2 && j>2) {space = c(space, 3)}
+    if(E == EMPTY&& j < n) {space = c(space, 4)}
+    if(S == EMPTY&&i < n) {space = c(space, 5)}
+    if(W == EMPTY&&j>2) {space = c(space, 6)}
+    if(SE == EMPTY&&i<n && j>2) {space = c(space, 7)}
+    if(SW == EMPTY&&i<n&&j<n) {space = c(space, 8)}
+    disp = sample(space,1)
+    
+    if (disp == 1) {
       hold = responseTimeGrid[i,j]
       responseTimeGrid[i , j] <<- responseTimeGrid[i-1 , j]
       responseTimeGrid[i-1 , j] <<- hold
-      hold = grid[i,j,layer]
-      grid[i , j,layer] <- grid[i-1 , j,layer]
-      grid[i-1 , j,layer] <- hold
+      hold = mat[i,j]
+      mat[i , j] <- mat[i-1 , j]
+      mat[i-1 , j] <- hold
     }
-    if (disp == S) {
+    if (disp == 2) {
       hold = responseTimeGrid[i,j]
-      responseTimeGrid[i , j] <<- responseTimeGrid[i+1 , j]
-      responseTimeGrid[i+1 , j] <<- hold
-      hold = grid[i,j,layer]
-      grid[i , j,layer] <- grid[i+1 , j,layer]
-      grid[i+1 , j,layer] <- hold
+      responseTimeGrid[i , j] <<- responseTimeGrid[i-1, j+1]
+      responseTimeGrid[i-1, j+1] <<- hold
+      hold = mat[i,j]
+      mat[i , j] <- mat[i-1, j+1]
+      mat[i-1, j+1] <- hold
     }
-    if (disp == E) {
+    if (disp == 3) {
       hold = responseTimeGrid[i,j]
-      responseTimeGrid[i , j] <<- responseTimeGrid[i , j+1]
-      responseTimeGrid[i , j+1] <<- hold
-      hold = grid[i,j,layer]
-      grid[i , j,layer] <- grid[i , j+1,layer]
-      grid[i , j+1,layer] <- hold
+      responseTimeGrid[i , j] <<- responseTimeGrid[i-1, j-1]
+      responseTimeGrid[i-1, j-1] <<- hold
+      hold = mat[i,j]
+      mat[i , j] <- mat[i-1, j-1]
+      mat[i-1, j-1] <- hold
     }
-    if (disp == W) {
+    if (disp == 4) {
       hold = responseTimeGrid[i,j]
-      responseTimeGrid[i , j] <<- responseTimeGrid[i , j-1]
-      responseTimeGrid[i , j-1] <<- hold
-      hold = grid[i,j,layer]
-      grid[i , j,layer] <- grid[i , j-1,layer]
-      grid[i , j-1,layer] <- hold
+      responseTimeGrid[i , j] <<- responseTimeGrid[i, j + 1]
+      responseTimeGrid[i, j + 1] <<- hold
+      hold = mat[i,j]
+      mat[i , j] <- mat[i, j + 1]
+      mat[i, j + 1] <- hold
     }
-    if (disp == NE) {
+    if (disp == 5) {
       hold = responseTimeGrid[i,j]
-      responseTimeGrid[i , j] <<- responseTimeGrid[i-1 , j+1]
-      responseTimeGrid[i-1 , j+1] <<- hold
-      hold = grid[i,j,layer]
-      grid[i , j,layer] <- grid[i-1 , j+1,layer]
-      grid[i-1 , j+1,layer] <- hold
+      responseTimeGrid[i , j] <<- responseTimeGrid[i + 1, j]
+      responseTimeGrid[i + 1, j] <<- hold
+      hold = mat[i,j]
+      mat[i , j] <- mat[i + 1, j]
+      mat[i + 1, j] <- hold
     }
-    if (disp == NW) {
+    if (disp == 6) {
       hold = responseTimeGrid[i,j]
-      responseTimeGrid[i , j] <<- responseTimeGrid[i-1 , j-1]
-      responseTimeGrid[i-1 , j-1] <<- hold
-      hold = grid[i,j,layer]
-      grid[i , j,layer] <- grid[i-1 , j-1,layer]
-      grid[i-1 , j-1,layer] <- hold
+      responseTimeGrid[i , j] <<- responseTimeGrid[i, j - 1]
+      responseTimeGrid[i, j - 1] <<- hold
+      hold = mat[i,j]
+      mat[i , j] <- mat[i, j - 1]
+      mat[i, j - 1] <- hold
     }
-    if (disp == SE) {
+    if (disp == 7) {
       hold = responseTimeGrid[i,j]
-      responseTimeGrid[i , j] <<- responseTimeGrid[i+1 , j+1]
-      responseTimeGrid[i+1 , j+1] <<- hold
-      hold = grid[i,j,layer]
-      grid[i , j,layer] <- grid[i+1 , j+1,layer]
-      grid[i+1 , j+1,layer] <- hold
+      responseTimeGrid[i , j] <<- responseTimeGrid[i+1, j-1]
+      responseTimeGrid[i+1, j-1] <<- hold
+      hold = mat[i,j]
+      mat[i , j] <- mat[i+1, j-1]
+      mat[i+1, j-1] <- hold
     }
-    if (disp == SW) {
+    if (disp == 8) {
       hold = responseTimeGrid[i,j]
-      responseTimeGrid[i , j] <<- responseTimeGrid[i+1 , j-1]
-      responseTimeGrid[i+1 , j-1] <<- hold
-      hold = grid[i,j,layer]
-      grid[i , j,layer] <- grid[i+1 , j-1,layer]
-      grid[i+1 , j-1,layer] <- hold
+      responseTimeGrid[i , j] <<- responseTimeGrid[i+1, j+1]
+      responseTimeGrid[i+1, j+1] <<- hold
+      hold = mat[i,j]
+      mat[i , j] <- mat[i+1, j+1]
+      mat[i+1, j+1] <- hold
     }
   }
+  return(mat)
 }
 
 spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, j) {
@@ -255,5 +310,5 @@ spread = function(site, N, NE, NW, E, S, W, SW, SE, probInfect, probReplace, i, 
 ### TESTING ###
 
 ## test grids = HIV(n, probHIV, probEmpty, probInfect, probReplace, t)
-grids = HIV(100, 0.05, 0.4, 0.000001, 0.99, 20)
-showGraphs(grids, 15)
+grids = HIV(100, 0.05, .2, 0.000001, 0.99, 10)
+showGraphs(grids, 100)
